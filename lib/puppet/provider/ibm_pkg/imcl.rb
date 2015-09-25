@@ -117,20 +117,16 @@ Puppet::Type.type(:ibm_pkg).provide(:imcl) do
 
     ## If a PID matches, attempt to kill it.
     unless pid.empty?
-      pids = ''
-      pid.each do |thepid|
-        pids += "#{thepid} "
-      end
       begin
-        self.debug "Attempting to kill PID #{pids}"
-        command = "/bin/kill #{pids}"
-        output = kill(pids, :combine => true, :failonfail => false)
+        self.debug "Attempting to kill PID(s) #{pid}"
+        command = ["/bin/kill"] + pid
+	output = Puppet::Util::Execution.execute(command, :combine => true, :failonfail => false)
       rescue Puppet::ExecutionFailure
         err = <<-EOF
-        Could not kill #{self.name}, PID #{thepid}.
+        Could not kill #{self.name}, PID(s) #{pid}.
         In order to install/upgrade to specified target: #{resource[:target]},
         all related processes need to be stopped.
-        Output of 'kill #{thepid}': #{output}
+        Output of '#{command.join(' ')}': #{output}
         EOF
 
         @resource.fail Puppet::Error, err, $!
